@@ -1,115 +1,101 @@
-# CivicPulse
-> A civic-tech platform for transparent, location-based issue reporting and resolution.
+# CivicPulse 
 
-**CivicPulse** is a modern, community-driven platform designed to empower citizens to report, track, and resolve civic issues in their neighborhoods. By bridging the gap between the community and local authorities, CivicPulse ensures transparency and real-time action on infrastructure and public amenity concerns.
+**CivicPulse** is a modern civic engagement platform built to bridge the gap between citizens and local government. It allows residents to report infrastructure issues, track resolutions in real-time, and communicate directly with city administrators.
 
-## Why CivicPulse?
+---
 
-Many civic issues go unreported or unresolved due to lack of visibility and accountability.  
-CivicPulse provides a transparent, map-based platform that empowers citizens and enables authorities to act efficiently on real community problems.
+##  Features
 
+* **User Authentication:** Secure Sign Up and Login for both **Citizens** and **Admins** using JWT and Bcrypt.
+* **Interactive Reporting:** Pinpoint local issues (potholes, waste, lighting) with descriptions and image uploads.
+* **Real-time Tracking:** Follow the lifecycle of a report from **Pending** to **Resolved**.
+* **Direct Messaging:** A built-in communication channel between citizens and city officials for specific issues.
+* **Impact Dashboard:** High-level analytics showing community progress and resolution rates.
+* **Modern UI:** A clean, responsive interface built with **Tailwind CSS** and **Vite**.
 
+---
 
+##  Tech Stack
 
-## Key Features 
+### Frontend
 
-*   **Real-time Dashboard:** Visualize community issues on an interactive map and activity feed.
-*   **Report Issues:** Users can pin exact locations on a map to report problems like potholes, streetlights, or sanitation issues.
-*   **Location Specificity:** Automatically fetches and displays precise addresses using Reverse Geocoding.
-*   **Admin Console:** Authorities can view, prioritize, and update the status of reported issues (Open -> In Progress -> Resolved).
-*   **Live Updates:** Status changes are reflected instantly across the platform.
+* **React.js** (Vite)
+* **Tailwind CSS**
+* **React Router DOM**
+* **Lucide React** (Icons)
 
-## Technology Stack
+### Backend
 
-*   **Frontend:** React (Vite), Tailwind CSS, React Leaflet (Maps)
-*   **Backend:** Node.js, Express.js
-*   **Database:** MongoDB (Mongoose ODM)
-*   **API:** RESTful Architecture, OpenStreetMap Nominatim (Geocoding)
+* **Node.js** & **Express.js**
+* **MongoDB** (via Mongoose)
+* **Bcrypt.js** (Password Security)
+* **CORS** & **Dotenv**
 
-## Deployment
+---
 
-- Frontend: Vercel
-- Backend: Render
-- Database: MongoDB Atlas
+##  Installation
 
+### 1. Clone the repository
 
-## Installation & Setup
+```bash
+git clone https://github.com/vaishaldsouza/CivicPulse.git
+cd CivicPulse
 
-Follow these steps to get the project running locally.
+```
 
-### Prerequisites
-*   Node.js (v16+)
-*   MongoDB Atlas URI (or local MongoDB)
-
-### 1. Backend Setup (Server)
-
-Navigate to the `server` directory and install dependencies:
+### 2. Setup the Backend
 
 ```bash
 cd server
 npm install
+
 ```
 
+Create a `.env` file in the `server` folder:
 
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
 
-Start the backend server:
-```bash
-npm run dev
 ```
 
-
-### 2. Frontend Setup (Client)
-
-Open a new terminal, navigate to the root directory (if not already there), and install dependencies:
+Start the server:
 
 ```bash
-cd ..
+npm start
+
+```
+
+### 3. Setup the Frontend
+
+Open a new terminal:
+
+```bash
+# From the root directory
 npm install
-```
-
-Start the frontend development server:
-```bash
 npm run dev
+
 ```
 
+---
 
-## Verification Criteria
+##  Project Structure
 
-To verify the application functionalities:
+```text
+CivicPulse/
+├── src/
+│   ├── components/
+│   │   ├── auth/         # Login, Signup
+│   │   ├── Layout/       # Navbar, Footer
+│   │   └── Impact.jsx    # Stats component
+│   ├── context/          # AuthContext.jsx
+│   ├── pages/            # LandingPage, Dashboard, Admin
+│   └── App.jsx           # Routes configuration
+├── server/
+│   ├── config/           # Database connection
+│   ├── models/           # User and Issue Schemas
+│   ├── routes/           # Auth and Issue API routes
+│   └── index.js          # Main entry point
+└── package.json
 
-### 1. Reporting an Issue
-*   Go to "Report Issue".
-*   Click anywhere on the map.
-*   **Verify:** The "Location" field updates with a specific address (e.g., "Main St, Mangaluru") instead of just coordinates.
-*   Fill in details and submit.
-
-### 2. Community Dashboard
-*   Go to the Home/Dashboard page.
-*   **Verify:** The new issue appears on the Map as a pin.
-*   **Verify:** The issue appears in "What's Happening Now?" with the correct **Date** (e.g., Oct 24, 2026) and **Time**.
-
-### 3. Admin Management
-*   Navigate to the Admin Dashboard (Login required if auth enabled).
-*   Change the status of an issue (e.g., Open -> Resolved).
-*   **Verify:** The status persists after refreshing the page.
-*   **Verify:** The status update is reflected on the Community details.
-
-## Default Credentials 
-
-*   **Admin Email:** `admin@civicpulse.com`
-*   **Password:** `admin123`
-
-## Screenshots
-![Login](/public/assets/login.png)
-![Report Issues](/public/assets/reportissues.png)
-![Community](/public/assets/community.png)
-![Home](/public/assets/homepage.png)
-![Authentication](/public/assets/authentication.png)
-
-## Live Demo
-
-- Frontend:https://civic-pulse-7xb6.vercel.app/
-- Backend API: https://civicpulse-nneb.onrender.com
-
-## Team 
-Solo (Minora Dias - Student @SJEC)
+```
