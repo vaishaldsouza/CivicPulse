@@ -4,15 +4,16 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function ProtectedRoute({ children, allowedRoles }) {
     const { user } = useAuth();
+    const role = user?.role === 'Admin' ? 'Admin' : 'Community';
 
     if (!user) {
-        // Ideally this shouldn't happen if RoleSelectionModal works, but safeguard:
-        return <Navigate to="/" replace />;
+        return <Navigate to="/login" replace />;
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-        // If role not allowed, unauthorized. Redirect to home or show error.
-        return <Navigate to="/" replace />;
+    if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+        // Admin trying to access citizen-only route → send to admin; citizen trying to access admin → send to dashboard
+        if (role === 'Admin') return <Navigate to="/admin" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;

@@ -1,138 +1,118 @@
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, UserPlus } from 'lucide-react';
+import { flushSync } from 'react-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export default function SignupModal({ isOpen, onClose, targetRole = 'community', onSwitchToLogin }) {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const { signup } = useAuth();
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-    if (!isOpen) return null;
+export default function Signup() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'Community'
+  });
+  const [error, setError] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-        if (password !== confirmPassword) {
-            alert("Passwords do not match!");
-            return;
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const res = await fetch(`/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      let data;
+      try {
+        data = await res.json();
+      } catch (err) {
+        console.error("JSON Parse Error:", err);
+        setError('Invalid response from server');
+        return;
+      }
+      if (res.ok) {
+        const role = data.role === 'Admin' ? 'Admin' : 'Community';
+        const target = role === 'Admin' ? '/admin' : '/dashboard';
+        console.log("Signup success:", data, "Redirecting to:", target);
+        flushSync(() => login({ ...data, role }));
+        navigate(target, { replace: true });
+      } else {
+        setError(data.msg || 'Registration failed');
+      }
+    } catch (err) {
+      setError(err.message || 'Connection to server failed. Is the backend running on port 5000?');
+    }
+  };
 
-        setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            signup(name, email, password, targetRole);
-            setIsLoading(false);
-            onClose();
-        }, 1000);
-    };
-
-    return (
-        <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden duration-200">
-                <div className="relative p-6 sm:p-8">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-
-                    <div className="text-center mb-8">
-                        <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
-                        <p className="text-sm text-gray-500 mt-2">Join as a {targetRole === 'admin' ? 'Administrator' : 'Community Member'}</p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Full Name</label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="text"
-                                    required
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="Enter your full name"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="Enter your email"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Password</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="Create a password"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">Confirm Password</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="password"
-                                    required
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="Confirm your password"
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-6"
-                        >
-                            {isLoading ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                                <>
-                                    <UserPlus className="w-5 h-5" />
-                                    Sign Up
-                                </>
-                            )}
-                        </button>
-                    </form>
-
-                    <div className="mt-6 text-center text-sm text-gray-500">
-                        Already have an account?{' '}
-                        <button
-                            onClick={onSwitchToLogin}
-                            className="text-blue-600 hover:underline font-medium"
-                        >
-                            Sign in
-                        </button>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-black text-blue-900">Create Account</h2>
+          <p className="text-gray-500 mt-2">Join the CivicPulse community</p>
         </div>
-    );
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100 text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            name="name" type="text" placeholder="Full Name" required
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            value={formData.name} onChange={handleChange}
+          />
+          <input
+            name="email" type="email" placeholder="Email Address" required
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            value={formData.email} onChange={handleChange}
+          />
+          <input
+            name="password" type="password" placeholder="Password" required
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            value={formData.password} onChange={handleChange}
+          />
+
+          <div className="bg-gray-50 p-1 rounded-2xl border border-gray-200 flex">
+            <button
+              type="button"
+              className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${formData.role === 'Community' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400'}`}
+              onClick={() => setFormData({ ...formData, role: 'Community' })}
+            >
+              Citizen
+            </button>
+            <button
+              type="button"
+              className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold transition-all ${formData.role === 'Admin' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400'}`}
+              onClick={() => setFormData({ ...formData, role: 'Admin' })}
+            >
+              Admin
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
+          >
+            Create Account
+          </button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+          <p className="text-sm text-gray-500">
+            Already have an account? <Link to="/login" className="text-blue-600 font-bold hover:underline">Sign In</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }

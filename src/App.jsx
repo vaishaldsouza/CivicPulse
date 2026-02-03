@@ -1,17 +1,66 @@
-import { mockIssues } from './data/mockIssues';
-import IssueCard from './components/issue/IssueCard';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { IssueProvider } from './context/IssueContext';
+import Navbar from './components/Layout/Nav';
+import Footer from './components/Layout/Footer';
+import LandingPage from './pages/LandingPage';
+import Dashboard from './pages/Dashboard';
+import AdminDashBoard from './pages/AdminDashBoard';
+import Login from './components/auth/LoginModal';
+import Signup from './components/auth/SignupModal';
+import Home from "./pages/Home";
+import ReportIssue from './pages/ReportIssue';
+import AuthRedirect from './components/auth/AuthRedirect';
 
-export default function App() {
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-10 text-center font-bold">Verifying Session...</div>;
+  if (!user) return <Navigate to="/login" />;
+  if (adminOnly && user.role !== 'Admin') return <Navigate to="/dashboard" />;
+  return children;
+};
+
+function App() {
   return (
-    <div className="min-h-screen bg-slate-100 p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">CivicPulse Issues</h1>
-        <div className="grid gap-4">
-          {mockIssues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+    <IssueProvider>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50 flex flex-col">
+            <AuthRedirect />
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/report-issue" element={<ReportIssue />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute adminOnly={true}>
+                      <AdminDashBoard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </AuthProvider>
+    </IssueProvider>
+  );
 }
+
+export default App;

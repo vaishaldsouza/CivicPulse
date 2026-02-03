@@ -1,119 +1,121 @@
-import React from 'react';
-import { Activity, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import { useIssues } from '../context/IssueContext';
-import StatCard from '../components/dashboard/StatCard';
-import RecentActivity from '../components/dashboard/RecentActivity';
-import L from 'leaflet';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import IssueCard from '../components/issue/IssueCard';
 
-// Fix for default Leaflet icon not showing
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+// ... (inside component)
 
-delete L.Icon.Default.prototype._getIconUrl;
 
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: markerIcon2x,
-    iconUrl: markerIcon,
-    shadowUrl: markerShadow
-});
+import LeaderboardTab from '../components/dashboard/LeaderboardTab';
+import MyReportsTab from '../components/dashboard/MyReportsTab';
+import IssueFeedTab from '../components/dashboard/IssueFeedTab';
+import ReportIssueTab from '../components/dashboard/ReportIssueTab';
 
 export default function Dashboard() {
-    const { issues } = useIssues();
+  const { user } = useAuth();
+  console.log("Dashboard Rendered. User:", user);
+  const [allReports, setAllReports] = useState([]);
+  const [activeTab, setActiveTab] = useState('feed'); // 'feed' | 'report' | 'my-reports' | 'leaderboard'
+  const [userPoints, setUserPoints] = useState(0);
 
-    // Calculate Stats
-    const totalIssues = issues.length;
-    const activeIssues = issues.filter(i => i.status !== 'Resolved').length;
-    const resolvedIssues = issues.filter(i => i.status === 'Resolved').length;
+  useEffect(() => {
+    fetchReports();
+    fetchUserPoints();
+  }, []);
 
-    return (
-        <div className="min-h-screen bg-gray-50 pt-20 px-4 sm:px-6 lg:px-8 pb-12">
-            <div className="max-w-7xl mx-auto space-y-8">
+  const fetchUserPoints = async () => {
+    // Calculated from reports for now
+  };
 
-                {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Community Dashboard</h1>
-                    <p className="mt-2 text-gray-600">Real-time insights into civic issues and community progress.</p>
-                </div>
+  const myReports = allReports.filter(item => item.email === user?.email);
 
-                {/* KPI Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <StatCard
-                        title="Total Reported Issues"
-                        value={totalIssues}
-                        icon={AlertCircle}
-                        color="blue"
-                        trend="+12% this month"
-                    />
-                    <StatCard
-                        title="Active Issues"
-                        value={activeIssues}
-                        icon={Activity}
-                        color="orange"
-                        trend="Needs attention"
-                    />
-                    <StatCard
-                        title="Resolved Issues"
-                        value={resolvedIssues}
-                        icon={CheckCircle}
-                        color="green"
-                        trend="Great job community!"
-                    />
-                </div>
+  useEffect(() => {
+    setUserPoints(myReports.length * 10);
+  }, [myReports]);
 
-                {/* Content Grid: Map + Recent Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  const fetchReports = async () => {
+    try {
+      const res = await fetch('/api/issues/all');
+      const data = await res.json();
+      setAllReports(Array.isArray(data) ? data : []);
+    } catch (err) { console.error(err); }
+  };
 
-                    {/* Map Section - Takes up 2 columns on large screens */}
-                    <div className="lg:col-span-2 h-full">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full">
-                            <div className="p-5 flex items-center justify-between border-b border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                    <MapPin className="w-5 h-5 text-gray-500" />
-                                    Issue Map
-                                </h2>
-                                <span className="text-sm text-gray-500">Visualizing reported concerns</span>
-                            </div>
-                            <div className="flex-1 min-h-[500px] w-full relative z-0">
-                                <MapContainer
-                                    center={[12.9141, 74.8560]}
-                                    zoom={13}
-                                    scrollWheelZoom={false}
-                                    className="h-full w-full"
-                                >
-                                    <TileLayer
-                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                    />
-                                    {issues.map(issue => (
-                                        <Marker key={issue._id || issue.id} position={issue.coordinates || [0, 0]}>
-                                            <Popup>
-                                                <div className="p-1">
-                                                    <div className="font-bold text-sm mb-1">{issue.title}</div>
-                                                    <div className="text-xs text-gray-600 mb-1">{issue.category}</div>
-                                                    <div className="text-xs text-gray-500 mb-2">{issue.location}</div>
-                                                    <div className={`text-xs px-2 py-0.5 rounded-full inline-block ${issue.status === 'Resolved' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                                                        }`}>
-                                                        {issue.status}
-                                                    </div>
-                                                </div>
-                                            </Popup>
-                                        </Marker>
-                                    ))}
-                                </MapContainer>
-                            </div>
-                        </div>
-                    </div>
+  const handleUpvote = async (issueId) => {
+    try {
+      const res = await fetch(`/api/issues/${issueId}/upvote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?._id || user?.id })
+      });
+      if (res.ok) {
+        fetchReports(); // Refresh data to show new vote count
+      }
+    } catch (err) { console.error("Upvote error:", err); }
+  };
 
-                    {/* Activity Feed - Takes up 1 column */}
-                    <div className="lg:col-span-1">
-                        <RecentActivity activities={issues} />
-                    </div>
+  const handleReportSubmitted = () => {
+    fetchReports();
+    setActiveTab('my-reports');
+  };
 
-                </div>
-            </div>
+  if (!user) return <div className="p-10 text-center">Loading User Data...</div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 space-y-6">
+      <div className="max-w-7xl mx-auto">
+
+        {/* Tabs and Gamification Header */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-gray-200 pb-2">
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setActiveTab('feed')}
+              className={`pb-2 px-4 font-bold transition-colors ${activeTab === 'feed' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Community Feed
+            </button>
+            <button
+              onClick={() => setActiveTab('report')}
+              className={`pb-2 px-4 font-bold transition-colors ${activeTab === 'report' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Report Issue
+            </button>
+            <button
+              onClick={() => setActiveTab('my-reports')}
+              className={`pb-2 px-4 font-bold transition-colors ${activeTab === 'my-reports' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              My Reports
+            </button>
+            <button
+              onClick={() => setActiveTab('leaderboard')}
+              className={`pb-2 px-4 font-bold transition-colors ${activeTab === 'leaderboard' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Leaderboard
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 mt-4 md:mt-0 bg-yellow-50 px-4 py-2 rounded-full border border-yellow-200 text-yellow-800 font-bold">
+            <span>🏆</span>
+            <span>{userPoints} Civic Points</span>
+          </div>
         </div>
-    );
+
+        {/* Tab Content */}
+        {activeTab === 'feed' && (
+          <IssueFeedTab allReports={allReports} handleUpvote={handleUpvote} user={user} />
+        )}
+
+        {activeTab === 'report' && (
+          <ReportIssueTab user={user} onReportSubmitted={handleReportSubmitted} />
+        )}
+
+        {activeTab === 'leaderboard' && (
+          <LeaderboardTab currentUser={user} />
+        )}
+
+        {activeTab === 'my-reports' && (
+          <MyReportsTab myReports={myReports} />
+        )}
+      </div>
+    </div>
+  );
 }

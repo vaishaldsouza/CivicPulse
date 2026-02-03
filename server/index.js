@@ -2,33 +2,42 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
+const issueRoutes = require('./routes/issueRoutes');
 
 dotenv.config();
 
-// Connect to Database
+if (!process.env.MONGO_URI) {
+  console.error('Missing MONGO_URI in .env. Copy server/.env.example to server/.env and set MONGO_URI (e.g. mongodb://localhost:27017/civicpulse).');
+  process.exit(1);
+}
 connectDB();
 
 const app = express();
 
-// Middleware
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174'
+];
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://civic-pulse-7xb6.vercel.app"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(null, true); // in dev allow others; set to false in production for security
+  },
   credentials: true
 }));
-app.use(express.json());
 
-// Routes
-app.use('/api/issues', require('./routes/issueRoutes'));
+app.use(express.json({ limit: '10mb' }));
 
-// Root Route
-app.get('/', (req, res) => {
-    res.send('CivicPulse API is running...');
+app.use('/api/auth', authRoutes);
+app.use('/api/issues', issueRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({ msg: "API Route not found" });
 });
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
